@@ -1,0 +1,81 @@
+version: '3.8'
+
+# Production Compose Configuration
+# Works with both Podman and Docker
+#
+# Recommended (Podman):
+#   podman-compose -f docker-compose.prod.yml --env-file .env.production up -d
+#   OR: podman compose -f docker-compose.prod.yml --env-file .env.production up -d
+#
+# Alternative (Docker):
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: poc-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-poc_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Database password required}
+      POSTGRES_DB: ${DB_NAME:-poc_auth_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-poc_user} -d ${DB_NAME:-poc_auth_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: poc-backend-prod
+    restart: always
+    environment:
+      DATABASE_URL: postgresql+psycopg://${DB_USER:-poc_user}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-poc_auth_db}
+      SECRET_KEY: ${SECRET_KEY:?Secret key required}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+      - frontend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+
+  # React Frontend (Production Build)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
+    container_name: poc-frontend-prod
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - frontend
+
+volumes:
+  postgres_data:
+    name: poc_postgres_data_prod
+
+networks:
+  backend:
+    name: poc-backend-network
+  frontend:
+    name: poc-frontend-network

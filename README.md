@@ -1,6 +1,18 @@
 # React + FastAPI Authentication App
 
-A simple web application demonstrating authentication with React frontend and FastAPI backend.
+A production-ready web application template demonstrating authentication with React frontend and FastAPI backend.
+
+> **🐳 This template uses Podman** (rootless, daemonless, Docker-compatible). See [WHY_PODMAN.md](WHY_PODMAN.md) for details. Docker works too - just replace `podman` with `docker`.
+
+## 🎯 Use as Template
+
+This project is designed to be used as a template for new projects. See **[NEW_PROJECT_SETUP.md](NEW_PROJECT_SETUP.md)** for detailed instructions.
+
+**Quick start for new projects:**
+```bash
+./init-new-project.sh my-new-project
+./quickstart.sh
+```
 
 ## Project Structure
 
@@ -29,13 +41,47 @@ A simple web application demonstrating authentication with React frontend and Fa
 
 ## Setup Instructions
 
-### Prerequisites
+### Option 1: Quick Start with Podman Compose (Recommended)
+
+The easiest way to get started:
+
+```bash
+# 1. Run the quick start script
+./quickstart.sh
+
+# Or manually with Podman Compose:
+podman-compose up -d
+# Or: podman compose up -d
+
+# Access the application:
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:8000
+# API Docs: http://localhost:8000/docs
+```
+
+**Default credentials:**
+- Username: `admin`
+- Password: `secret`
+
+**To stop:**
+```bash
+podman-compose down
+# Or: podman compose down
+```
+
+> **Note:** This project uses Podman by default. Docker also works - just replace `podman` with `docker` in commands.
+
+### Option 2: Manual Setup
+
+#### Prerequisites
 - Node.js (v16+)
 - Python (v3.14+)
 - npm or yarn
-- Podman (for PostgreSQL container)
+- Podman (or Docker) for containers
+  - Recommended: `podman` and `podman-compose`
+  - Alternative: `docker` and `docker compose`
 
-### Frontend Setup
+#### Frontend Setup
 
 1. Navigate to the frontend directory:
    ```bash
@@ -73,11 +119,12 @@ A simple web application demonstrating authentication with React frontend and Fa
    podman ps | grep poc-postgres
    ```
 
-**Database Management:**
+**Database Management (Podman):**
 - Start: `podman start poc-postgres`
 - Stop: `podman stop poc-postgres`
 - Logs: `podman logs poc-postgres`
 - Shell: `podman exec -it poc-postgres psql -U poc_user -d poc_auth_db`
+- View containers: `podman ps`
 
 ### Backend Setup
 
@@ -107,7 +154,13 @@ A simple web application demonstrating authentication with React frontend and Fa
    # ACCESS_TOKEN_EXPIRE_MINUTES=30
    ```
 
-5. Start the FastAPI server:
+5. Run database migrations:
+   ```bash
+   alembic upgrade head
+   ```
+   This creates the `users` table and applies all migrations.
+
+6. Start the FastAPI server:
    ```bash
    uvicorn main:app --reload
    ```

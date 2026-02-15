@@ -1,0 +1,77 @@
+version: '3.8'
+
+# This compose file works with both Podman and Docker
+# Recommended: Use Podman (rootless, daemonless, more secure)
+#   podman-compose up -d
+#   OR: podman compose up -d
+# Alternative: Use Docker
+#   docker compose up -d
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: poc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: poc_user
+      POSTGRES_PASSWORD: poc_password
+      POSTGRES_DB: poc_auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U poc_user -d poc_auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: poc-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://poc_user:poc_password@postgres:5432/poc_auth_db
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /app/venv  # Exclude venv from mount
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # React Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: poc-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Exclude node_modules from mount
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # Enable hot reload in Docker
+    depends_on:
+      - backend
+    stdin_open: true  # Keep stdin open for React
+    tty: true
+
+volumes:
+  postgres_data:
+    name: poc_postgres_data
+
+networks:
+  default:
+    name: poc-network

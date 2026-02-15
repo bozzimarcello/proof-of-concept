@@ -4,6 +4,10 @@
 
 # Environment variables (contains secrets!)
 backend/.env
+backend/.env.production
+backend/.env.development
+.env.production
+.env.development
 
 # Python
 backend/__pycache__/
