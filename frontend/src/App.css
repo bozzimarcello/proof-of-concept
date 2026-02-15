@@ -1,0 +1,44 @@
+.App {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+/* Card styling */
+.card {
+  border: none;
+  border-radius: 10px;
+}
+
+.card-body {
+  padding: 2rem;
+}
+
+/* Form elements */
+.form-control:focus {
+  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+  border-color: #80bdff;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.btn-primary:hover {
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.btn-primary:disabled {
+  background-color: #007bff;
+  border-color: #007bff;
+  opacity: 0.65;
+}
